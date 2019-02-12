@@ -1,0 +1,12 @@
+base
+lattice
+ggplot2
+caret
+rattle
+foreach
+iterators
+doParallel
+dplyr
+ggraph
+igraph
+bindrcpp
