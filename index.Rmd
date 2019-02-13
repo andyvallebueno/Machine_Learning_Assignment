@@ -2,14 +2,15 @@
 title: "Predicting quality of exercise movements using data from accelerometers"
 author: "Andy Vallebueno"
 date: "February 12, 2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(caret)
 library(ggplot2)
-library(rattle)
 library(parallel)
 library(doParallel)
 library(dplyr)
@@ -24,12 +25,12 @@ This report has the objective of fitting a model that predicts the quality of an
 More information on this dataset can be found at the following webpage: http://groupware.les.inf.puc-rio.br/har#dataset#ixzz5fKXfT5aO
 
 ## Exploratory Analysis
-We begin by reading the training and testing data into R and observe that the training dataset consists of 19,622 observations of 160 variables. These belong to six subjects, as per the user_name variable, producing five different movements (A, B, C, D or E), as per the classe variable. This type of movement is the variable that we shall seek to predict with our model. Below is a summary of a portion of the variables included.    
+We begin by reading the training and testing data into R and observe that the training dataset consists of 19,622 observations of 160 variables. These belong to six subjects, as per the user_name variable, producing five different movements (A, B, C, D or E), as per the classe variable. This type of movement is the variable that we shall seek to predict with our model. Below is a summary of the first 20 variables.     
 
 ```{r readdata}
 training<- read.csv("pml-training.csv")
 testing<- read.csv("pml-testing.csv")
-summary(training[, c(1:20, 160)])
+summary(training[, 1:20])
 ```
 
 Given the large size of the training set, we will create a validation set and then proceed to the exploratory analysis on our resulting training set. 
@@ -92,13 +93,13 @@ model1predictions<- predict(model1, newdata = validationset)
 confusionMatrix(validationset$classe, model1predictions)
 ```
 
-We now fit a second model, a random forest model, to compare. We note that there is an important trade-off here in terms of accuracy and speed compared to our first model. Accuracy for Model 2 increases to 100%, although it is much more computationally demanding and subject to overfitting. We note that in this section we are using cross validation as the resampling method in the trainControl function, and changing to 5 the number that specifies the quantity of folds for k-fold cross validation. 
+We now fit a second model, a random forest model, to compare. We note that there is an important trade-off here in terms of accuracy and speed compared to our first model. Accuracy for Model 2 increases to 99.9%, although it is much more computationally demanding and subject to overfitting. We note that in this section we are using cross validation as the resampling method in the trainControl function, and changing to 5 the number that specifies the quantity of folds for k-fold cross validation. 
 
 ```{r , cache = TRUE}
 cluster<-makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
 fitControl<- trainControl(method = "cv", number = 5, allowParallel = TRUE)
-model2<- train(classe ~ . , data = newtrainingset, method = "rf", trControl = fitControl)
+model2<- train(classe ~ . , data = newtrainingset[, 2:60], method = "rf", trControl = fitControl)
 stopCluster(cluster)
 registerDoSEQ()
 
@@ -161,10 +162,9 @@ tree_func <- function(final_model,
 
 ```
 
-```{r , warning=FALSE}
+```{r , warning=FALSE, fig.height= 8}
 tree_func(final_model = model2$finalModel, 1)
 ```
-
 
 ## Conclusions 
 Following an exploratory analysis and model selection process, we have fitted a random forest model with strong accuracy metrics on our validation data set which classifies the quality of a particular activity using 60 variables. This model will be used on a testing set to predict the class or quality of movement of 20 different observations. Although our in sample error is relatively low, we know that the out of sample error or generalization error will be slightly higher, particularly due to overfitting in random forest models. However, we expect an adequate performance.   
